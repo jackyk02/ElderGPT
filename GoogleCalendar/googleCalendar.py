@@ -27,7 +27,12 @@ def authoriseStuff():
     service = build('calendar', 'v3', credentials=creds)
     return service
 
-def create_calendar_event(title:str, location:str, startDateTime:str, endDateTime:str, reminderList: Optional[List[str]] = None, recurrenceRules: Optional[List[str]] = None) -> str:
+def currentDateTime()->str:
+    """Useful to get the current date time"""
+    now = datetime.datetime.utcnow().isoformat() + 'Z'
+    return now
+
+def create_calendar_event(title:str, location:str, startDateTime:str, endDateTime:str, reminderList: Optional[List[str]] = [], recurrenceRules: Optional[List[str]] = []) -> str:
     """Useful to create a calendar event with the provided arguments"""
     event = {
         'summary': title,
@@ -48,7 +53,6 @@ def create_calendar_event(title:str, location:str, startDateTime:str, endDateTim
             recurrenceRules
         ],
     }
-    print("custom event")
     result= createEvent(event)
     return f"Success: Event created: {result}"
 

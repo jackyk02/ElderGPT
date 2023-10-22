@@ -5,6 +5,7 @@ from langchain.llms import OpenAI
 from langchain.utilities import SerpAPIWrapper
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from pydantic.v1 import BaseModel, Field
+from langchain import PromptTemplate
 
 from GoogleCalendar.googleCalendar import *
 
@@ -26,10 +27,11 @@ class SearchInput(BaseModel):
 class DeleteCalendarEventInput(BaseModel):
     event: str = Field(description="Calendar event id of event to delete")
 
-from langchain.tools import StructuredTool
+from langchain.tools import StructuredTool #tools from functions
 createEventTool= StructuredTool.from_function(create_calendar_event)
 listEventTool= StructuredTool.from_function(list_calendar_events)
 deleteEventTool= StructuredTool.from_function(deleteEvent)
+currentDateTimeTool= StructuredTool.from_function(currentDateTime)
 
 tools = [
     Tool(
@@ -37,23 +39,28 @@ tools = [
         func=search.run,
         description="useful for when you need to answer questions about current events. You should ask targeted questions",
         args_schema=SearchInput
-
-    ),
-    Tool(
-        name="Calculator",
-        func=llm_math_chain.run,
-        description="useful for when you need to answer questions about math"
     ),
 ]
 tools.append(createEventTool)
 tools.append(deleteEventTool)
 tools.append(listEventTool)
+tools.append(currentDateTimeTool)
 
-from langchain.tools.render import format_tool_to_openai_function
-functions=[format_tool_to_openai_function(t) for t in tools] #tools include the functions to run
-print(tools)
-print(functions)#openai_functions are the function description but they are not very detailed
+from langchain.tools.render import format_tool_to_openai_function #to observe what is passed to agent
+# functions=[format_tool_to_openai_function(t) for t in tools] #tools include the functions to run
+# print(tools)
+# print(functions)#openai_functions are the function description but they are not very detailed
 
-# Using OpenAIFunctionsAgent
-# agent_executor = initialize_agent(tools, llm, agent=AgentType.OPENAI_FUNCTIONS, verbose=True)
-# agent_executor.invoke({"input": "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"})
+# Using OpenAIFunctionsAgent- AgentType.OPENAI_FUNCTIONS
+prompt="""
+    You are a helpful assistant that manages Tom's calendar events. 
+    Do not assume the current date or any of the function's arguments.
+"""
+agent_executor = initialize_agent(tools, 
+                                  llm=llm, 
+                                  agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, 
+                                  verbose=True,
+                                  agent_kwargs={
+                                      'prefix': prompt
+                                  })
+agent_executor.invoke({"input": "I would like to rockclimb this coming Tuesday"})
