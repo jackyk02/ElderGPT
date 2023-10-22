@@ -10,6 +10,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from typing import List, Optional, Type
+
+
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']
 
@@ -24,7 +27,8 @@ def authoriseStuff():
     service = build('calendar', 'v3', credentials=creds)
     return service
 
-def create_calendar_event(title, location, startDateTime, endDateTime, reminderList=None, recurrenceRules=None):
+def create_calendar_event(title:str, location:str, startDateTime:str, endDateTime:str, reminderList: Optional[List[str]] = None, recurrenceRules: Optional[List[str]] = None) -> str:
+    """Useful to create a calendar event with the provided arguments"""
     event = {
         'summary': title,
         'location': location,
@@ -48,7 +52,8 @@ def create_calendar_event(title, location, startDateTime, endDateTime, reminderL
     result= createEvent(event)
     return f"Success: Event created: {result}"
 
-def list_calendar_events(query=None):
+def list_calendar_events(query: Optional[str] = None)-> List[str]:
+    """Useful to obtain a list future events alongside their event ids"""
     service= authoriseStuff()
     now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
     events_result = service.events().list(calendarId='primary', timeMin=now,
@@ -58,9 +63,8 @@ def list_calendar_events(query=None):
 
     if not events:
         print('No upcoming events found.')
-        return
+        return []
     result=[]
-    # Prints the start and name of the next 10 events
     for event in events:
         start = event['start'].get('dateTime', event['start'].get('date'))
         id= event['id']
@@ -68,9 +72,11 @@ def list_calendar_events(query=None):
         print(start, event['summary'], id)
     return result
 
-def deleteEvent(eventId):
+def deleteEvent(eventId: str)-> None:
+    """Useful to delete an event Calendar given its event id"""
     service= authoriseStuff()
     service.events().delete(calendarId='primary', eventId=eventId).execute()
+    return
 
 def createEvent(event):
     service= authoriseStuff()
