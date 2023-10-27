@@ -6,6 +6,7 @@ from langchain.utilities import SerpAPIWrapper
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from pydantic.v1 import BaseModel, Field
 from langchain import PromptTemplate
+from langchain.callbacks import HumanApprovalCallbackHandler
 
 from GoogleCalendar.googleCalendar import *
 
@@ -33,6 +34,8 @@ listEventTool= StructuredTool.from_function(list_calendar_events)
 deleteEventTool= StructuredTool.from_function(deleteEvent)
 currentDateTimeTool= StructuredTool.from_function(currentDateTime)
 
+createEventTool.callbacks= [HumanApprovalCallbackHandler()] #human approval requirememt
+
 tools = [
     Tool(
         name="Search",
@@ -55,12 +58,13 @@ from langchain.tools.render import format_tool_to_openai_function #to observe wh
 prompt="""
     You are a helpful assistant that manages Tom's calendar events. 
     Do not assume the current date or any of the function's arguments.
+    Today's date is 25th October 2023.
 """
 agent_executor = initialize_agent(tools, 
                                   llm=llm, 
                                   agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, 
-                                  verbose=True,
+                                  verbose=False,
                                   agent_kwargs={
                                       'prefix': prompt
                                   })
-agent_executor.invoke({"input": "I would like to rockclimb this coming Tuesday"})
+response= agent_executor.invoke({"input": "I would like to rockclimb this coming Tuesday from 1pm to 3pm"})
