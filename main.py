@@ -3,12 +3,13 @@ from langchain.chains import LLMMathChain
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.utilities import SerpAPIWrapper
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from pydantic.v1 import BaseModel, Field
-from langchain import PromptTemplate
 from langchain.callbacks import HumanApprovalCallbackHandler
-
+from langchain.agents import ZeroShotAgent, Tool, AgentExecutor
+from langchain.chains import LLMChain
+from langchain.schema.messages import HumanMessage, AIMessage
 from GoogleCalendar.googleCalendar import *
+from datetime import date
 
 import os
 from dotenv import load_dotenv
@@ -34,7 +35,7 @@ listEventTool= StructuredTool.from_function(list_calendar_events)
 deleteEventTool= StructuredTool.from_function(deleteEvent)
 currentDateTimeTool= StructuredTool.from_function(currentDateTime)
 
-createEventTool.callbacks= [HumanApprovalCallbackHandler()] #human approval requirememt
+#createEventTool.callbacks= [HumanApprovalCallbackHandler()] #human approval requirememt
 
 tools = [
     Tool(
@@ -49,22 +50,37 @@ tools.append(deleteEventTool)
 tools.append(listEventTool)
 tools.append(currentDateTimeTool)
 
-from langchain.tools.render import format_tool_to_openai_function #to observe what is passed to agent
-# functions=[format_tool_to_openai_function(t) for t in tools] #tools include the functions to run
-# print(tools)
-# print(functions)#openai_functions are the function description but they are not very detailed
+today = date.today()
 
-# Using OpenAIFunctionsAgent- AgentType.OPENAI_FUNCTIONS
-prompt="""
+prefix="""
     You are a helpful assistant that manages Tom's calendar events. 
     Do not assume the current date or any of the function's arguments.
-    Today's date is 25th October 2023.
-"""
-agent_executor = initialize_agent(tools, 
-                                  llm=llm, 
-                                  agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, 
-                                  verbose=False,
-                                  agent_kwargs={
-                                      'prefix': prompt
-                                  })
-response= agent_executor.invoke({"input": "I would like to rockclimb this coming Tuesday from 1pm to 3pm"})
+    Today's date is {}.
+""".format(today.strftime("%B %d, %Y"))
+print(prefix)
+
+from langchain.memory import ConversationBufferMemory
+from langchain.prompts import MessagesPlaceholder
+chat_history = MessagesPlaceholder(variable_name="chat_history")
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+agent= initialize_agent(tools, llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prefix, "memory_prompts": [chat_history]}, memory= memory)
+
+
+if __name__ == "__main__":
+    #sanity check for memory
+    # print(agent.run("my name is bob"))
+    # print(agent.run("what is my name"))
+    userInput= input("Chat with me!\n")
+    intermediateSteps=[]
+    while True:
+        output= agent.invoke({"input": userInput})
+        print(memory)
+        print(output["output"])
+        #print(output) #keys: input, chat_history, output
+        userInput=input()
+
+
+def load_calendar_chain(model,chatMemory):
+    chat_history=MessagesPlaceholder(variable_name="chat_history")
+    agent= initialize_agent(tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prefix,"memory_prompts":[chat_history]}, memory= chatMemory)
+    return agent

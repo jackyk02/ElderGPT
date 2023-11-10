@@ -1,6 +1,8 @@
 import streamlit as st
 from streamlit_chat import message
 from model import load_chain
+from main import load_calendar_chain
+from langchain.memory import ConversationBufferMemory
 
 #init session states
 if ("chat_answers_history" not in st.session_state 
@@ -10,6 +12,7 @@ if ("chat_answers_history" not in st.session_state
     st.session_state["model_answer_history"] = []
     st.session_state["user_prompt_history"] = []
     st.session_state["chat_history"] = []
+    st.session_state["memory"]= ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
 ## STREAMLIT COMPONENTS
 # header
@@ -27,16 +30,27 @@ input_text = st.text_input("Prompt", placeholder="Enter your message here...") o
 )
 def run_llm(input_text):
    qa= load_chain(MODEL)
+   print(st.session_state["memory"])
    return qa({"question": input_text,"chat_history": st.session_state["chat_history"] })
+
+def run_Calendar(input_text):
+   calendarChain= load_calendar_chain(MODEL,st.session_state["memory"])
+   response= calendarChain.invoke({"input": input_text})
+   generated_response={}
+   generated_response["answer"]= response["output"] # for backward compatiability
+   return generated_response
     
-#act on user's input
+#act on user's input8
 if input_text:
    with st.spinner("Generating response..."):
-    generated_response=run_llm(input_text)
+    generated_response=run_Calendar(input_text)
+    #generated_response=run_Calendar(input_text)
     #generated_response, memory= load_chain(query= input_text, model=MODEL)
+    #generated_response= run_llm(input_text) #original model
     st.session_state.user_prompt_history.append(input_text)
     st.session_state.model_answer_history.append(generated_response["answer"])
     st.session_state.chat_history.append((input_text, generated_response["answer"]))
+    st.session_state.memory.save_context({"input": input_text},{"output": generated_response["answer"]})
 
 #populate current conversation
 with st.expander("Conversation", expanded=True):
