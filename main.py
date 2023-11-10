@@ -8,9 +8,8 @@ from langchain.callbacks import HumanApprovalCallbackHandler
 from langchain.agents import ZeroShotAgent, Tool, AgentExecutor
 from langchain.chains import LLMChain
 from langchain.schema.messages import HumanMessage, AIMessage
-from GoogleCalendar.googleCalendar import *
+from googleCalendar import *
 from datetime import date
-
 import os
 from dotenv import load_dotenv
 load_dotenv()

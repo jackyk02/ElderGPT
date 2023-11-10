@@ -25,6 +25,12 @@ with st.sidebar.expander("🛠️ ", expanded=False):
     # Option to preview memory store
     MODEL = st.selectbox(label='Model', options=['gpt-3.5-turbo','gpt-4','text-davinci-003','text-davinci-002','code-davinci-002'])
     K = st.number_input(' (#)Summary of prompts to consider',min_value=3,max_value=1000)
+    st.download_button(
+    label="Download chat history",
+    data= json.dumps(st.session_state["chat_history"]),
+    file_name='chat_history_{}.json'.format(datetime.datetime.now()),
+    mime='application/json',
+) 
 
 # initial text input
 input_text = st.text_input("Prompt", placeholder="Enter your message here...") or st.button(
@@ -35,16 +41,11 @@ picture = st.camera_input("Take a picture") #future expansion?
 if picture:
     st.image(picture)
 
-st.download_button(
-    label="Download chat history",
-    data= json.dumps(st.session_state["chat_history"]),
-    file_name='chat_history_{}.json'.format(datetime.datetime.now()),
-    mime='application/json',
-) 
+
 
 uploaded_file = st.file_uploader("Choose a file") #upload audio file
 
-audio_file = open('media/audio.mp3', 'rb') #play the audio output (not automable)
+audio_file = open('/Users/yufei/Desktop/Coding/Academics/CS294-GenAI/media/audio.mp3', 'rb') #play the audio output (not automable)
 audio_bytes = audio_file.read()
 st.audio(audio_bytes, format='audio/mp3')
          
