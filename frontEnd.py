@@ -3,6 +3,8 @@ from streamlit_chat import message
 from model import load_chain
 from main import load_calendar_chain
 from langchain.memory import ConversationBufferMemory
+import datetime
+import json 
 
 #init session states
 if ("chat_answers_history" not in st.session_state 
@@ -28,6 +30,24 @@ with st.sidebar.expander("🛠️ ", expanded=False):
 input_text = st.text_input("Prompt", placeholder="Enter your message here...") or st.button(
     "Submit"
 )
+
+picture = st.camera_input("Take a picture") #future expansion?
+if picture:
+    st.image(picture)
+
+st.download_button(
+    label="Download chat history",
+    data= json.dumps(st.session_state["chat_history"]),
+    file_name='chat_history_{}.json'.format(datetime.datetime.now()),
+    mime='application/json',
+) 
+
+uploaded_file = st.file_uploader("Choose a file") #upload audio file
+
+audio_file = open('media/audio.mp3', 'rb') #play the audio output (not automable)
+audio_bytes = audio_file.read()
+st.audio(audio_bytes, format='audio/mp3')
+         
 def run_llm(input_text):
    qa= load_chain(MODEL)
    print(st.session_state["memory"])

@@ -65,7 +65,6 @@ chat_history = MessagesPlaceholder(variable_name="chat_history")
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 agent= initialize_agent(tools, llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prefix, "memory_prompts": [chat_history]}, memory= memory)
 
-
 if __name__ == "__main__":
     #sanity check for memory
     # print(agent.run("my name is bob"))
@@ -78,7 +77,6 @@ if __name__ == "__main__":
         print(output["output"])
         #print(output) #keys: input, chat_history, output
         userInput=input()
-
 
 def load_calendar_chain(model,chatMemory):
     chat_history=MessagesPlaceholder(variable_name="chat_history")
