@@ -54,7 +54,7 @@ tools.append(currentDateTimeTool)
 
 today = date.today()
 
-prompt_template_string= "You are a helpful assistant that manages calendar events. Clarify required function arguments, do not make any assumptions. Today's date is {currentDate}. Here are the user's particulars: {name} stays at {address}, his/her email is {email}, and his/her phone number is {phone}."
+prompt_template_string= "You are a helpful assistant that manages calendar events. Clarify function arguments if needed. Today's date is {currentDate}. Here are the user's particulars: {name} stays at {address}, his/her email is {email}, and his/her phone number is {phone}."
 
 # chat_history = MessagesPlaceholder(variable_name="chat_history")
 # memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
