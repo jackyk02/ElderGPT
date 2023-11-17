@@ -8,8 +8,11 @@ from langchain.callbacks import HumanApprovalCallbackHandler
 from langchain.agents import ZeroShotAgent, Tool, AgentExecutor
 from langchain.chains import LLMChain
 from langchain.schema.messages import HumanMessage, AIMessage
+from langchain.memory import ConversationBufferMemory
+from langchain.prompts import MessagesPlaceholder
 from googleCalendar import *
 from datetime import date
+from langchain.prompts import PromptTemplate
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -17,8 +20,8 @@ load_dotenv()
 OPENAI_API= os.getenv('OPENAI_API_KEY')
 SERPAPI_API_KEY= os.getenv('SERPAPI_API_KEY')
 
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
 search = SerpAPIWrapper()
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
 llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
 
 
@@ -51,18 +54,11 @@ tools.append(currentDateTimeTool)
 
 today = date.today()
 
-prefix="""
-    You are a helpful assistant that manages Tom's calendar events. 
-    Do not assume the current date or any of the function's arguments.
-    Today's date is {}.
-""".format(today.strftime("%B %d, %Y"))
-print(prefix)
+prompt_template_string= "You are a helpful assistant that manages calendar events. Clarify required function arguments, do not make any assumptions. Today's date is {currentDate}. Here are the user's particulars: {name} stays at {address}, his/her email is {email}, and his/her phone number is {phone}."
 
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import MessagesPlaceholder
-chat_history = MessagesPlaceholder(variable_name="chat_history")
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-agent= initialize_agent(tools, llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prefix, "memory_prompts": [chat_history]}, memory= memory)
+# chat_history = MessagesPlaceholder(variable_name="chat_history")
+# memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+# agent= initialize_agent(tools, llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prefix, "memory_prompts": [chat_history]}, memory= memory)
 
 if __name__ == "__main__":
     #sanity check for memory
@@ -77,7 +73,13 @@ if __name__ == "__main__":
         #print(output) #keys: input, chat_history, output
         userInput=input()
 
-def load_calendar_chain(model,chatMemory):
+
+
+def load_calendar_chain(model,chatMemory, userInfo):
+    llm = ChatOpenAI(temperature=0, model=model)
     chat_history=MessagesPlaceholder(variable_name="chat_history")
-    agent= initialize_agent(tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prefix,"memory_prompts":[chat_history]}, memory= chatMemory)
+
+    prompt_string=prompt_template_string.format(currentDate=today.strftime("%B %d, %Y"), name= userInfo["name"], address= userInfo["location"], email= userInfo["email"],phone= userInfo["phone"])
+
+    agent= initialize_agent(tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prompt_string,"memory_prompts":[chat_history]}, memory= chatMemory)
     return agent
