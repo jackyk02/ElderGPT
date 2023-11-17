@@ -81,5 +81,5 @@ def load_calendar_chain(model,chatMemory, userInfo):
 
     prompt_string=prompt_template_string.format(currentDate=today.strftime("%B %d, %Y"), name= userInfo["name"], address= userInfo["location"], email= userInfo["email"],phone= userInfo["phone"])
 
-    agent= initialize_agent(tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prompt_string,"memory_prompts":[chat_history]}, memory= chatMemory)
+    agent= initialize_agent(tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prompt_string, "input_variables": ["chat_history"],"memory_prompts": [chat_history],}, memory= chatMemory)
     return agent
