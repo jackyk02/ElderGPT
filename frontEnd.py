@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit_chat import message
 from calendarAgent import load_calendar_chain
+from mainAgent import load_main_agent
 from langchain.memory import ConversationBufferMemory, ConversationBufferWindowMemory
 import datetime
 import json 
@@ -78,11 +79,18 @@ def run_Calendar(input_text):
    generated_response={}
    generated_response["answer"]= response["output"] # for backward compatiability
    return generated_response
+
+def run_agent(input_text):
+    agent= load_main_agent(MODEL,st.session_state["memory"], st.session_state["user_info"])
+    response= agent.run(input_text)
+    generated_response={}
+    generated_response["answer"]= response # for backward compatiability
+    return generated_response
     
 #act on user's input
 def submit():
    with st.spinner("Generating response..."):
-    generated_response=run_Calendar(st.session_state.userPrompt)
+    generated_response=run_agent(st.session_state.userPrompt)
     #generated_response, memory= load_chain(query= input_text, model=MODEL)
     st.session_state.user_prompt_history.append(st.session_state.userPrompt)
     st.session_state.model_answer_history.append(generated_response["answer"])
