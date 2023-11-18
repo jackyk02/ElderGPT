@@ -1,10 +1,12 @@
 import streamlit as st
 from streamlit_chat import message
-from main import load_calendar_chain
+from calendarAgent import load_calendar_chain
 from langchain.memory import ConversationBufferMemory, ConversationBufferWindowMemory
 import datetime
 import json 
+from st_audiorec import st_audiorec
 
+conversationWindow=5 #hardcoded
 
 st.set_page_config(initial_sidebar_state="collapsed")
 
@@ -21,21 +23,30 @@ if ("chat_answers_history" not in st.session_state
     st.session_state["model_answer_history"] = []
     st.session_state["user_prompt_history"] = []
     st.session_state["chat_history"] = []
-    st.session_state["memory"]= ConversationBufferWindowMemory(memory_key="chat_history", return_messages=True)
+    st.session_state["memory"]= ConversationBufferWindowMemory(k=conversationWindow,memory_key="chat_history", return_messages=True)
+
+# wav_audio_data = st_audiorec()
+# if wav_audio_data is not None:
+#     st.audio(wav_audio_data, format='audio/wav') #additional parameters of sample_rate and start time
 
 #side bar for model settings
 with st.sidebar:
-    with st.expander("👴 User Information", expanded=False):
+    with st.expander(":older_man: User Information", expanded=False):
         NAME= st.text_input("Name", value="John Doe")
         EMAIL= st.text_input("Email", value="JohnDoe@gmail.com")
         PHONE= st.text_input("Phone", value="91234567")
         LOCATION= st.text_input("Location", value="2299 Piedmont Ave, Berkeley, CA 94720")
         st.session_state["user_info"]= {"name": NAME, "email": EMAIL, "phone": PHONE, "location": LOCATION}
+
+    with st.expander(":ear: Audio Settings", expanded=False):
+        SPEECH_MODEL= st.selectbox("Voice",options=['gpt-3.5-turbo','gpt-4','text-davinci-003','text-davinci-002','code-davinci-002'])
+        READING_RATE = st.number_input('Reading Rate',min_value=1.,max_value=5., value=3.,step=0.25)
     
-    with st.expander("🛠️ Settings ", expanded=False):
+    with st.expander(":hammer_and_wrench: Settings ", expanded=False):
         MODEL = st.selectbox(label='Model', options=['gpt-3.5-turbo','gpt-4','text-davinci-003','text-davinci-002','code-davinci-002'])
-        K = st.number_input(' (#) Number of interaction pairs to display',min_value=1,max_value=10)
+        K = st.number_input(' (#) Number of interaction pairs to display',min_value=1,max_value=10, value=3)
         #I= st.number_input(' (#) Number of pairs of conversations to consider',min_value=1,max_value=10) #can't be done as initialisation of buffer memory is on page load
+
 
     st.download_button(
         label="Download chat history",
@@ -43,8 +54,6 @@ with st.sidebar:
         file_name='chat_history_{}.json'.format(datetime.datetime.now()),
         mime='application/json')
     
-
-
 #Camera
 # picture = st.camera_input("Take a picture") #future expansion?
 # if picture:

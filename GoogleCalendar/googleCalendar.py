@@ -23,7 +23,7 @@ def authoriseStuff():
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     if not creds:
             print("no credentials found")
-            return
+            raise Exception("no credentials found")
     service = build('calendar', 'v3', credentials=creds)
     return service
 
@@ -33,7 +33,7 @@ def currentDateTime()->str:
     return now
 
 def create_calendar_event(title:str, location:str, startDateTime:str, endDateTime:str, reminderList: Optional[List[str]] = [], recurrenceRules: Optional[List[str]] = []) -> str:
-    """Useful to create a calendar event with the provided arguments"""
+    """Useful to create a calendar event on Google Calendar with the provided arguments"""
     event = {
         'summary': title,
         'location': location,
@@ -57,7 +57,7 @@ def create_calendar_event(title:str, location:str, startDateTime:str, endDateTim
     return f"Success: Event created: {result}"
 
 def list_calendar_events(query: Optional[str] = None)-> List[str]:
-    """Useful to obtain a list future events alongside their event ids"""
+    """Useful to obtain a list Google Calendar events with the provided query, if no query is provided, it will return all events. Returns a list of event"""
     service= authoriseStuff()
     now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
     events_result = service.events().list(calendarId='primary', timeMin=now,
@@ -77,12 +77,13 @@ def list_calendar_events(query: Optional[str] = None)-> List[str]:
     return result
 
 def deleteEvent(eventId: str)-> None:
-    """Useful to delete an event Calendar given its event id"""
+    """Useful to delete an event Google Calendar given its event id"""
     service= authoriseStuff()
     service.events().delete(calendarId='primary', eventId=eventId).execute()
     return
 
 def createEvent(event):
+    print("called createEvent")
     service= authoriseStuff()
     event = service.events().insert(calendarId='primary', body=event).execute()
     return event.get('htmlLink')

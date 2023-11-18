@@ -56,13 +56,13 @@ def create_calendar_event(title:str, location:str, startDateTime:str, endDateTim
     result= createEvent(event)
     return f"Success: Event created: {result}"
 
-def list_calendar_events(query: Optional[str] = None)-> List[str]:
+def list_calendar_events(calendarEventTitle: Optional[str] = None)-> List[str]:
     """Useful to obtain a list future events alongside their event ids"""
     service= authoriseStuff()
     now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
     events_result = service.events().list(calendarId='primary', timeMin=now,
                                               maxResults=10, singleEvents=True,
-                                              orderBy='startTime', q=query).execute()
+                                              orderBy='startTime', q=calendarEventTitle).execute()
     events = events_result.get('items', [])
 
     if not events:
@@ -72,7 +72,7 @@ def list_calendar_events(query: Optional[str] = None)-> List[str]:
     for event in events:
         start = event['start'].get('dateTime', event['start'].get('date'))
         id= event['id']
-        result.append(start, event['summary'], id)
+        result.append([start, event['summary'], id])
         print(start, event['summary'], id)
     return result
 
