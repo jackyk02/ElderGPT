@@ -28,9 +28,6 @@ llm_math_chain = LLMMathChain.from_llm(llm=llm, verbose=True)
 class SearchInput(BaseModel):
     query: str = Field(description="should be a search query")
 
-class DeleteCalendarEventInput(BaseModel):
-    event: str = Field(description="Calendar event id of event to delete")
-
 from langchain.tools import StructuredTool #tools from functions
 createEventTool= StructuredTool.from_function(create_calendar_event)
 listEventTool= StructuredTool.from_function(list_calendar_events)
@@ -54,32 +51,45 @@ tools.append(currentDateTimeTool)
 
 today = date.today()
 
-prompt_template_string= "You are a helpful assistant that manages calendar events. Clarify function arguments if needed. Today's date is {currentDate}. Here are the user's particulars: {name} stays at {address}, his/her email is {email}, and his/her phone number is {phone}."
-
-# chat_history = MessagesPlaceholder(variable_name="chat_history")
-# memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-# agent= initialize_agent(tools, llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prefix, "memory_prompts": [chat_history]}, memory= memory)
-
-if __name__ == "__main__":
-    #sanity check for memory
-    # print(agent.run("my name is bob"))
-    # print(agent.run("what is my name"))
-    userInput= input("Chat with me!\n")
-    intermediateSteps=[]
-    while True:
-        output= agent.invoke({"input": userInput})
-        print(memory)
-        print(output["output"])
-        #print(output) #keys: input, chat_history, output
-        userInput=input()
-
-
+prompt_template_string= "You are a helpful assistant that manages calendar events. Clarify function arguments if needed. Today's date is {currentDate}. Here are the user's particulars, use it if needed: User's name is {name}, his address is {address}, his/her email is {email}, and his/her phone number is {phone}."
 
 def load_calendar_chain(model,chatMemory, userInfo):
     llm = ChatOpenAI(temperature=0, model=model)
     chat_history=MessagesPlaceholder(variable_name="chat_history")
 
     prompt_string=prompt_template_string.format(currentDate=today.strftime("%B %d, %Y"), name= userInfo["name"], address= userInfo["location"], email= userInfo["email"],phone= userInfo["phone"])
-
-    agent= initialize_agent(tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prompt_string, "input_variables": ["chat_history"],"memory_prompts": [chat_history],}, memory= chatMemory)
+    
+    agent= initialize_agent(tools=tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prompt_string, "input_variables": ["chat_history"],"memory_prompts": [chat_history],}, memory= chatMemory)
     return agent
+
+def load_calendar_chain_no_memory(model, userInfo):
+    llm = ChatOpenAI(temperature=0, model=model)
+
+    prompt_string=prompt_template_string.format(currentDate=today.strftime("%B %d, %Y"), name= userInfo["name"], address= userInfo["location"], email= userInfo["email"],phone= userInfo["phone"])
+    
+    agent= initialize_agent(tools=tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prompt_string})
+    return agent
+
+if __name__ == "__main__":
+    #sanity check for memory
+    # print(agent.run("my name is bob"))
+    # print(agent.run("what is my name"))
+    user_info={}
+    user_info["name"]="John Doe"
+    user_info["email"]="JohnDoe@gmail.com"
+    user_info["phone"]="91234567"
+    user_info["location"]="2299 Piedmont Ave, Berkeley, CA 94720"
+    memory= ConversationBufferMemory(memory_key="chat_history",return_messages=True)
+    calendarChain= load_calendar_chain("gpt-3.5-turbo",memory, user_info)
+    #response= calendarChain.invoke({"input": "create a calendar event for tea time at 10am tomorrow for 30 minutes at Strate Cafe"})
+    #response= calendarChain.invoke({"input": "what calendar events do I have this week?"})
+    response= calendarChain.invoke({"input": "could you delete the events I have this week?"})
+    print(response)
+    # userInput= input("Chat with me!\n")
+    # intermediateSteps=[]
+    # while True:
+    #     output= agent.invoke({"input": userInput})
+    #     print(memory)
+    #     print(output["output"])
+    #     #print(output) #keys: input, chat_history, output
+    #     userInput=input()
