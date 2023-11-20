@@ -21,12 +21,14 @@ if ("chat_answers_history" not in st.session_state
     and "user_prompt_history" not in st.session_state 
     and "chat_history" not in st.session_state 
     and "memory" not in st.session_state
+    and "checkbox" not in st.session_state
     ):
     st.session_state["model_answer_history"] = []
     st.session_state["user_prompt_history"] = []
     st.session_state["chat_history"] = []
     memory= ConversationBufferWindowMemory(k=conversationWindow,memory_key="chat_history", return_messages=True)
     st.session_state["memory"]= memory
+    st.session_state["checkbox"]= []
 
 # wav_audio_data = st_audiorec()
 # if wav_audio_data is not None:
@@ -42,6 +44,8 @@ def on_change_checkbox(date,eventName):
     data.append(date)
     with open(fileName, 'w') as file:
         json.dump(data, file, indent=4)
+    st.session_state["checkbox"].append(eventName+date)
+    
 
 #side bar for model settings
 with st.sidebar:
@@ -50,7 +54,8 @@ with st.sidebar:
     for event in events:
         time= datetime.datetime.strptime(event[0], '%Y-%m-%dT%H:%M:%S%z').strftime('%I:%M %p')
         date= datetime.datetime.strptime(event[0], '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%d-%p')
-        st.checkbox(time+ ": "+event[1], value=False, key=event[2], on_change=on_change_checkbox(date,event[1]))
+        if event[1]+date not in st.session_state["checkbox"]:
+            st.checkbox(time+ ": "+event[1], value=False, key=event[1], on_change=on_change_checkbox(date,event[1]))
     st.subheader("Configurations")
     with st.expander(":older_man: User Information", expanded=False):
         NAME= st.text_input("Name", value="John Doe")
