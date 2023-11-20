@@ -83,7 +83,7 @@ if __name__ == "__main__":
     calendarChain= load_calendar_chain("gpt-3.5-turbo",memory, user_info)
     #response= calendarChain.invoke({"input": "create a calendar event for tea time at 10am tomorrow for 30 minutes at Strate Cafe"})
     #response= calendarChain.invoke({"input": "what calendar events do I have this week?"})
-    response= calendarChain.invoke({"input": "could you delete the events I have this week?"})
+    response= calendarChain.invoke({"input": "remind me to take my medications every day at 11am"})
     print(response)
     # userInput= input("Chat with me!\n")
     # intermediateSteps=[]

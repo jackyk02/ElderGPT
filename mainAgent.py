@@ -16,10 +16,12 @@ from typing import Dict
 from datetime import date
 from langchain.prompts import PromptTemplate
 from langchain.tools import StructuredTool
+from infoRetriever import *
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
+from emailFunc import *
 
 OPENAI_API= os.getenv('OPENAI_API_KEY')
 SERPAPI_API_KEY= os.getenv('SERPAPI_API_KEY')
@@ -38,7 +40,7 @@ tools = [
     ]
 #unable to create agents like the above method as agents take in a specified input of {"input"=userInput}
 
-prompt_template_string= "You are a helpful assistant. You manage calender events, doordash orders, maps navigation and report on the news. Clarify function arguments if needed. Today's date is {currentDate}. Here are the user's particulars, use it if needed. You are currently chatting with  {name}, his address is {address}, his/her email is {email}, and his/her phone number is {phone}."
+prompt_template_string= "You are a helpful assistant. You manage calender events, doordash orders, maps navigation and report on the news.  Clarify function arguments if needed. You also have access to the records of when he has taking his medication, by accessing files which are stored in the data folder. Do not assume the file's name, list the files to identify file of interest. Today's date is {currentDate}. Here are the user's particulars, use it if needed. You are currently chatting with {name}, his address is {address}, his/her email is {email}, and his/her phone number is {phone}."
 
 
 def load_main_agent(model, memory, user_info):
@@ -67,6 +69,10 @@ def load_main_agent(model, memory, user_info):
     # tools.append(StructuredTool.from_function(doordash_agent))
     # tools.append(StructuredTool.from_function(maps_agent))
     # tools.append(StructuredTool.from_function(news_agent))
+    tools.append(StructuredTool.from_function(list_files, name="list medical records", description="list files in the data folder"))
+    tools.append(StructuredTool.from_function(read_file, name= "read medical records", description="read a record of the days medication wasin the data folder"))
+    tools.append(StructuredTool.from_function(send_email, name= "send email", description="sends an email to an intended recipient"))
+    
 
     """Loads the main agent"""
     llm = ChatOpenAI(temperature=0, model=model)
@@ -93,6 +99,8 @@ if __name__ == "__main__":
 
     agent=initialize_agent(tools=tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prompt_string,"input_variables": ["chat_history"],"memory_prompts": [chat_history],}, memory= memory)
 
-    response= agent.run("create a calendar event for tea time at 10am tomorrow for 30 minutes at Strate Cafe")
+    #response= agent.run("create a calendar event for tea time at 10am tomorrow for 30 minutes at Strate Cafe")
+    #response= agent.run("retrieve the dates from the records file for which I took my diabetes medication")
+    response= agent.run("send an email to joshua wishing him a happy birthday")
 
     print(response)
