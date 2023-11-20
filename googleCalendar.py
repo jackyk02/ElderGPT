@@ -9,9 +9,9 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-
+import pytz
 from typing import List, Optional, Type
-
+from datetime import datetime, timedelta
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']
@@ -28,12 +28,22 @@ def authoriseStuff():
     return service
 
 def currentDateTime()->str:
-    """Useful to get the current date time"""
+    """This function helps to get the current date time
+    :return: current date time
+    """
     now = datetime.datetime.utcnow().isoformat() + 'Z'
     return now
 
 def create_calendar_event(title:str, location:str, startDateTime:str, endDateTime:str, reminderList: Optional[List[str]] = [], recurrenceRules: Optional[List[str]] = []) -> str:
-    """Useful to create a calendar event with the provided arguments"""
+    """This function helps to create a calendar event given its details
+    :param title: title of the event
+    :param location: location of the event
+    :param startDateTime: start date time of the event
+    :param endDateTime: end date time of the event
+    :param reminderList: list of reminders
+    :param recurrenceRules: list of recurrence rules, must include end date in basic ISO 8601 date format
+    :return: html link to the event
+    """
     event = {
         'summary': title,
         'location': location,
@@ -56,8 +66,33 @@ def create_calendar_event(title:str, location:str, startDateTime:str, endDateTim
     result= createEvent(event)
     return f"Success: Event created: {result}"
 
+def list_calendar_events_today()->List[str]:
+    pacific = pytz.timezone('America/Los_Angeles')
+    now = datetime.now(pacific)
+    timeMin = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    timeMin_str = timeMin.isoformat()
+    timeMax = timeMin + timedelta(days=1)
+    timeMax_str = timeMax.isoformat()
+    service= authoriseStuff()
+    events_result = service.events().list(calendarId='primary', timeMin=timeMin_str,
+                                              singleEvents=True, timeMax=timeMax_str,
+                                              orderBy='startTime').execute()
+    events = events_result.get('items', [])
+    if not events:
+        print('No upcoming events found.')
+        return []
+    result=[]
+    for event in events:
+        start = event['start'].get('dateTime', event['start'].get('date'))
+        id= event['id']
+        result.append([start, event['summary'], id])
+    return result
+
 def list_calendar_events(calendarEventTitle: Optional[str] = None)-> List[str]:
-    """Useful to obtain a list future events alongside their event ids"""
+    """This function helps to list calendar events given its optional title
+    :param calendarEventTitle: title of the event (optional)
+    :return: list of events
+    """
     service= authoriseStuff()
     now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
     events_result = service.events().list(calendarId='primary', timeMin=now,
@@ -73,11 +108,13 @@ def list_calendar_events(calendarEventTitle: Optional[str] = None)-> List[str]:
         start = event['start'].get('dateTime', event['start'].get('date'))
         id= event['id']
         result.append([start, event['summary'], id])
-        print(start, event['summary'], id)
     return result
 
 def deleteEvent(eventId: str)-> None:
-    """Useful to delete an event Calendar given its event id"""
+    """This function helps to delete a calendar event given its id
+    :param eventId: id of the event
+    :return: None
+    """
     service= authoriseStuff()
     service.events().delete(calendarId='primary', eventId=eventId).execute()
     return
@@ -107,4 +144,5 @@ def main():
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
 if __name__ == '__main__':
-    main()
+    #main()
+    create_calendar_event(title="Take Diabetes Medications", location="Home", startDateTime="2023-11-19T13:00:00", endDateTime="2023-11-19T13:15:00", recurrenceRules=["RRULE:FREQ=DAILY;COUNT=30"], reminderList=["15 minutes"])

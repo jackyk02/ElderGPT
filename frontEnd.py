@@ -6,6 +6,7 @@ from langchain.memory import ConversationBufferMemory, ConversationBufferWindowM
 import datetime
 import json 
 from st_audiorec import st_audiorec
+from googleCalendar import list_calendar_events_today
 
 conversationWindow=5 #hardcoded
 
@@ -24,20 +25,42 @@ if ("chat_answers_history" not in st.session_state
     st.session_state["model_answer_history"] = []
     st.session_state["user_prompt_history"] = []
     st.session_state["chat_history"] = []
-    st.session_state["memory"]= ConversationBufferWindowMemory(k=conversationWindow,memory_key="chat_history", return_messages=True)
+    memory= ConversationBufferWindowMemory(k=conversationWindow,memory_key="chat_history", return_messages=True)
+    st.session_state["memory"]= memory
 
 # wav_audio_data = st_audiorec()
 # if wav_audio_data is not None:
 #     st.audio(wav_audio_data, format='audio/wav') #additional parameters of sample_rate and start time
 
+def on_change_checkbox(date,eventName):
+    fileName= "data/"+ eventName+ ".json"
+    try:
+        with open(fileName, 'r') as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        data = []
+    data.append(date)
+    with open(fileName, 'w') as file:
+        json.dump(data, file, indent=4)
+
 #side bar for model settings
 with st.sidebar:
+    st.subheader("Calendar Events")
+    events= list_calendar_events_today()
+    for event in events:
+        time= datetime.datetime.strptime(event[0], '%Y-%m-%dT%H:%M:%S%z').strftime('%I:%M %p')
+        date= datetime.datetime.strptime(event[0], '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%d-%p')
+        st.checkbox(time+ ": "+event[1], value=False, key=event[2], on_change=on_change_checkbox(date,event[1]))
+    st.subheader("Configurations")
     with st.expander(":older_man: User Information", expanded=False):
         NAME= st.text_input("Name", value="John Doe")
         EMAIL= st.text_input("Email", value="JohnDoe@gmail.com")
         PHONE= st.text_input("Phone", value="91234567")
         LOCATION= st.text_input("Location", value="2299 Piedmont Ave, Berkeley, CA 94720")
         st.session_state["user_info"]= {"name": NAME, "email": EMAIL, "phone": PHONE, "location": LOCATION}
+        # text="My name is {NAME}, my email address is {email}, my contact number is {PHONE} and i stay at {LOCATION}" # not needed- works as it is
+        # fText= text.format(NAME=NAME, email=EMAIL, PHONE=PHONE, LOCATION=LOCATION)
+        # st.session_state["memory"].save_context({"input":fText}, {"output": "cool. I'll remember it!"})
 
     with st.expander(":ear: Audio Settings", expanded=False):
         SPEECH_MODEL= st.selectbox("Voice",options=['gpt-3.5-turbo','gpt-4','text-davinci-003','text-davinci-002','code-davinci-002'])
