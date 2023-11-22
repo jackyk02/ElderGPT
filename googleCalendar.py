@@ -1,7 +1,6 @@
  #run to generate token
 from __future__ import print_function
 
-import datetime
 import os.path
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -10,7 +9,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import pytz
 from typing import List, Optional, Type
-from datetime import datetime, timedelta
+from datetime import timedelta, datetime
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']
@@ -33,7 +32,7 @@ def currentDateTime()->str:
     now = datetime.datetime.utcnow().isoformat() + 'Z'
     return now
 
-def create_calendar_event(title:str, location:str, startDateTime:str, endDateTime:str, reminderList: Optional[List[str]] = [], recurrenceRules: Optional[List[str]] = []) -> str:
+def create_calendar_event(title:str, location:str, startDateTime:str, endDateTime:str, reminderList: Optional[List[str]] = None, recurrenceRules: Optional[List[str]] = None) -> str:
     """This function helps to create a calendar event given its details
     :param title: title of the event
     :param location: location of the event
@@ -93,7 +92,7 @@ def list_calendar_events(calendarEventTitle: Optional[str] = None)-> List[str]:
     :return: list of events
     """
     service= authoriseStuff()
-    now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+    now = datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
     events_result = service.events().list(calendarId='primary', timeMin=now,
                                               maxResults=10, singleEvents=True,
                                               orderBy='startTime', q=calendarEventTitle).execute()

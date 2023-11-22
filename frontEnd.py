@@ -14,8 +14,8 @@ conversationWindow=5 #hardcoded
 st.set_page_config(initial_sidebar_state="collapsed")
 
 ## STREAMLIT COMPONENTS
-st.title('🦜🔗 Quickstart App')
-st.subheader(" Powered by 🦜 LangChain + OpenAI + Streamlit")
+st.title('ElderGPT')
+st.subheader(":robot_face: A conversational agent for the elderly")
 
 #init session states
 if ("chat_answers_history" not in st.session_state 
@@ -23,7 +23,7 @@ if ("chat_answers_history" not in st.session_state
     and "chat_history" not in st.session_state 
     and "memory" not in st.session_state
     and "checkbox" not in st.session_state
-    and "friends_info" not in st.session_state
+    and "contacts" not in st.session_state
     ):
     st.session_state["model_answer_history"] = []
     st.session_state["user_prompt_history"] = []
@@ -31,7 +31,7 @@ if ("chat_answers_history" not in st.session_state
     memory= ConversationBufferWindowMemory(k=conversationWindow,memory_key="chat_history", return_messages=True)
     st.session_state["memory"]= memory
     st.session_state["checkbox"]= []
-    st.session_state["friends_info"]= {}
+    st.session_state["contacts"]= {}
 
 # wav_audio_data = st_audiorec()
 # if wav_audio_data is not None:
@@ -69,13 +69,13 @@ with st.sidebar:
         # text="My name is {NAME}, my email address is {email}, my contact number is {PHONE} and i stay at {LOCATION}" # not needed- works as it is
         # fText= text.format(NAME=NAME, email=EMAIL, PHONE=PHONE, LOCATION=LOCATION)
         # st.session_state["memory"].save_context({"input":fText}, {"output": "cool. I'll remember it!"})
-    with st.expander(":older_man: Friends Information", expanded=False):
-        J = st.number_input('Number of friends',min_value=0,max_value=10, value=1)
+    with st.expander(":telephone: Contact Information", expanded=False):
+        J = st.number_input('Number of Contacts',min_value=0,max_value=10, value=0)
         for j in range(J):
-            st.subheader("Friend "+str(j+1))
+            st.subheader("Contact "+str(j+1))
             NAME= st.text_input("Name", value="John Doe", key="friendsName"+str(j))
             EMAIL= st.text_input("Email", value="JohnDoe@gmail.com", key="friendsEmail"+str(j))
-        st.session_state["friends_info"][NAME]= EMAIL
+        st.session_state["contacts"][NAME]= EMAIL
     with st.expander(":ear: Audio Settings", expanded=False):
         SPEECH_MODEL= st.selectbox("Voice",options=['gpt-3.5-turbo','gpt-4','text-davinci-003','text-davinci-002','code-davinci-002'])
         READING_RATE = st.number_input('Reading Rate',min_value=1.,max_value=5., value=3.,step=0.25)
@@ -118,7 +118,7 @@ def run_Calendar(input_text):
    return generated_response
 
 def run_agent(input_text):
-    agent= load_main_agent(MODEL,st.session_state["memory"], st.session_state["user_info"])
+    agent= load_main_agent(MODEL,st.session_state["memory"], st.session_state["user_info"], st.session_state["contacts"])
     response= agent.run(input_text)
     generated_response={}
     generated_response["answer"]= response # for backward compatiability
@@ -142,15 +142,25 @@ def speech_to_text_callback():
     else:
         st.warning('Did not transcribe anything- try to speaka again', icon="⚠️")
 
-c1,c2=st.columns(2)
+RFC5646_LANGUAGE_CODES={
+    'English': 'en-US',
+    'Mandarin': 'cmn-CN',
+    'Hindi': 'hi-IN',
+    'German': 'de-DE',
+    'Japanese': 'ja-JP'
+}
+
+c1,c2,c3=st.columns([2,3,5])
 with c1:
     st.write("Interact by Speaking:")
 with c2:
+    language=st.selectbox("Language",options=['English','Mandarin','Hindi','German','Japanese'])
+with c3:
     #audio input
     speech_to_text(
-        language='en',
-        start_prompt="Start Speaking",
-        stop_prompt="End Speaking", 
+        language=RFC5646_LANGUAGE_CODES[language],
+        start_prompt="Click to Speak",
+        stop_prompt="Click to Stop", 
         just_once=False,
         use_container_width=True,
         callback=speech_to_text_callback,
@@ -159,10 +169,16 @@ with c2:
         key="speech"
         )
 
-
-# initial text input
-input_text = st.text_input("User Input", placeholder="Enter your message here...", key="userPrompt", on_change=submit)
-
+def readOut():
+    lastResponse=st.session_state.model_answer_history[-1]
+    print(lastResponse) #TODO add text to speech
+    
+col1,col2= st.columns([10,2])
+with col1:
+    # initial text input
+    input_text = st.text_input("User Input", placeholder="Enter your message here...", key="userPrompt", on_change=submit)
+with col2:
+    st.button("Read aloud", on_click=readOut)
 #populate current conversation
 with st.expander("Conversation", expanded=True):
     num_items = len(st.session_state.user_prompt_history)

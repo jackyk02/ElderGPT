@@ -4,10 +4,8 @@ from email.mime.multipart import MIMEMultipart
 import os
 from dotenv import load_dotenv
 load_dotenv()
-
 GMAIL_EMAIL=os.getenv('GMAIL_EMAIL')
-GMAIL_PASSWORD= os.getenv('OPENAI_API_KEY')
-
+GMAIL_PASSWORD= os.getenv('GMAIL_PASSWORD')
 def send_email(receiver_email:str, subject:str, body:str)-> None:  
     """
     This function helps to send an email to the user
