@@ -7,6 +7,7 @@ import datetime
 import json 
 from st_audiorec import st_audiorec
 from googleCalendar import list_calendar_events_today
+from streamlit_mic_recorder import speech_to_text
 
 conversationWindow=5 #hardcoded
 
@@ -22,6 +23,7 @@ if ("chat_answers_history" not in st.session_state
     and "chat_history" not in st.session_state 
     and "memory" not in st.session_state
     and "checkbox" not in st.session_state
+    and "friends_info" not in st.session_state
     ):
     st.session_state["model_answer_history"] = []
     st.session_state["user_prompt_history"] = []
@@ -29,6 +31,7 @@ if ("chat_answers_history" not in st.session_state
     memory= ConversationBufferWindowMemory(k=conversationWindow,memory_key="chat_history", return_messages=True)
     st.session_state["memory"]= memory
     st.session_state["checkbox"]= []
+    st.session_state["friends_info"]= {}
 
 # wav_audio_data = st_audiorec()
 # if wav_audio_data is not None:
@@ -66,7 +69,13 @@ with st.sidebar:
         # text="My name is {NAME}, my email address is {email}, my contact number is {PHONE} and i stay at {LOCATION}" # not needed- works as it is
         # fText= text.format(NAME=NAME, email=EMAIL, PHONE=PHONE, LOCATION=LOCATION)
         # st.session_state["memory"].save_context({"input":fText}, {"output": "cool. I'll remember it!"})
-
+    with st.expander(":older_man: Friends Information", expanded=False):
+        J = st.number_input('Number of friends',min_value=0,max_value=10, value=1)
+        for j in range(J):
+            st.subheader("Friend "+str(j+1))
+            NAME= st.text_input("Name", value="John Doe", key="friendsName"+str(j))
+            EMAIL= st.text_input("Email", value="JohnDoe@gmail.com", key="friendsEmail"+str(j))
+        st.session_state["friends_info"][NAME]= EMAIL
     with st.expander(":ear: Audio Settings", expanded=False):
         SPEECH_MODEL= st.selectbox("Voice",options=['gpt-3.5-turbo','gpt-4','text-davinci-003','text-davinci-002','code-davinci-002'])
         READING_RATE = st.number_input('Reading Rate',min_value=1.,max_value=5., value=3.,step=0.25)
@@ -126,8 +135,33 @@ def submit():
     st.session_state.memory.save_context({"input": st.session_state.userPrompt},{"output": generated_response["answer"]})
     st.session_state.userPrompt = ""
 
+def speech_to_text_callback():
+    if st.session_state.speech_output!= None:
+        st.session_state.userPrompt = st.session_state.speech_output
+        submit()
+    else:
+        st.warning('Did not transcribe anything- try to speaka again', icon="⚠️")
+
+c1,c2=st.columns(2)
+with c1:
+    st.write("Interact by Speaking:")
+with c2:
+    #audio input
+    speech_to_text(
+        language='en',
+        start_prompt="Start Speaking",
+        stop_prompt="End Speaking", 
+        just_once=False,
+        use_container_width=True,
+        callback=speech_to_text_callback,
+        args=(),
+        kwargs={},
+        key="speech"
+        )
+
+
 # initial text input
-input_text = st.text_input("Prompt", placeholder="Enter your message here...", key="userPrompt", on_change=submit)
+input_text = st.text_input("User Input", placeholder="Enter your message here...", key="userPrompt", on_change=submit)
 
 #populate current conversation
 with st.expander("Conversation", expanded=True):
