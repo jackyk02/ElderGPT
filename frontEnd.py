@@ -8,6 +8,12 @@ import json
 from st_audiorec import st_audiorec
 from googleCalendar import list_calendar_events_today
 from streamlit_mic_recorder import speech_to_text
+from elevenlabs import generate, stream
+from elevenlabs import set_api_key, stream, generate, Voices, VoiceSettings, User, Voice
+import os
+from dotenv import load_dotenv
+load_dotenv()
+set_api_key(os.getenv('ELEVENLABS_API_KEY'))
 
 conversationWindow=5 #hardcoded
 
@@ -77,8 +83,8 @@ with st.sidebar:
             EMAIL= st.text_input("Email", value="JohnDoe@gmail.com", key="friendsEmail"+str(j))
         st.session_state["contacts"][NAME]= EMAIL
     with st.expander(":ear: Audio Settings", expanded=False):
-        SPEECH_MODEL= st.selectbox("Voice",options=['gpt-3.5-turbo','gpt-4','text-davinci-003','text-davinci-002','code-davinci-002'])
-        READING_RATE = st.number_input('Reading Rate',min_value=1.,max_value=5., value=3.,step=0.25)
+        SPEECH_VOICE= st.selectbox("Voice",options=["Rachel", "Domi", "Bella", "Antoni", "Elli", "Josh", "Jeremy", "Adam", "Sam"])
+        READING_RATE = st.number_input('Reading Rate',min_value=0.5,max_value=3.0, value=1.0,step=0.25)
     
     with st.expander(":hammer_and_wrench: Settings ", expanded=False):
         MODEL = st.selectbox(label='Model', options=['gpt-3.5-turbo','gpt-4','text-davinci-003','text-davinci-002','code-davinci-002'])
@@ -169,9 +175,22 @@ with c3:
         key="speech"
         )
 
+voiceId= {'Rachel': '21m00Tcm4TlvDq8ikWAM', 'Domi': 'AZnzlk1XvdvUeBnXmlld', 'Bella': 'EXAVITQu4vr4xnSDxMaL', 'Antoni': 'ErXwobaYiN019PkySvjV', 'Elli': 'MF3mGyEYCl7XYWbV9V6O', 'Josh': 'TxGEqnHWrfWFTfGW9XjX', 'Jeremy': 'bVMeCyTHy58xNoL34h3p', 'Adam': 'pNInz6obpgDQGcFmaJgB', 'Sam': 'yoZ06aMxZJJ28mfd3POQ'}
 def readOut():
     lastResponse=st.session_state.model_answer_history[-1]
-    print(lastResponse) #TODO add text to speech
+    voice = Voice(
+        voice_id=voiceId[SPEECH_VOICE], #Bella
+        settings=VoiceSettings(
+            stability=0.72, similarity_boost=0.2, style=0.0, use_speaker_boost=False, speaking_rate=READING_RATE
+        ),
+    )
+    audio_stream = generate(
+        text=lastResponse,
+        voice=voice,
+        model="eleven_monolingual_v1",
+        stream=True
+    )
+    stream(audio_stream)
     
 col1,col2= st.columns([10,2])
 with col1:
