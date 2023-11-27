@@ -30,8 +30,9 @@ class SearchInput(BaseModel):
 
 from langchain.tools import StructuredTool #tools from functions
 createEventTool= StructuredTool.from_function(create_calendar_event)
-listEventTool= StructuredTool.from_function(list_calendar_events)
-deleteEventTool= StructuredTool.from_function(deleteEvent)
+#listEventTool= StructuredTool.from_function(list_calendar_events)
+listEventTool= StructuredTool.from_function(list_calendar_events_simple)
+deleteEventTool= StructuredTool.from_function(deleteEventsDate)
 currentDateTimeTool= StructuredTool.from_function(currentDateTime)
 
 #createEventTool.callbacks= [HumanApprovalCallbackHandler()] #human approval requirememt

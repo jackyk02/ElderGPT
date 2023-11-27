@@ -108,6 +108,38 @@ def list_calendar_events(calendarEventTitle: Optional[str] = None)-> List[str]:
         result.append([start, event['summary'], id])
     return result
 
+def get_start_end_rfc3339(dateTime):
+    #dateTime_obj = datetime.fromisoformat(dateTime)
+    dateTime_obj = datetime.fromisoformat(dateTime).astimezone(pytz.timezone('America/Los_Angeles'))
+    start_of_day = dateTime_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=1) - timedelta(microseconds=1)
+    start_rfc3339 = start_of_day.isoformat()
+    end_rfc3339 = end_of_day.isoformat()
+    return start_rfc3339, end_rfc3339
+
+def list_calendar_events_simple(dateTime)-> List[str]:
+    """This function helps to list calendar events on a particular day
+    :param dateTime: date to list events
+    :return: list of events
+    """
+    start,end= get_start_end_rfc3339(dateTime)
+    service= authoriseStuff()
+    events_result = service.events().list(calendarId='primary', timeMin=start,timeMax=end,
+                                              maxResults=10, singleEvents=False).execute()
+    events = events_result.get('items', [])
+    if not events:
+        print('No upcoming events found.')
+        return []
+    result=[]
+    for event in events:
+        summary= event['summary']
+        if "medication" in summary: #skip medication events from getting deleted
+            continue
+        start = event['start'].get('dateTime', event['start'].get('date'))
+        id= event['id']
+        result.append([start, summary, id])
+    return result
+
 def deleteEvent(eventId: str)-> None:
     """This function helps to delete a calendar event given its id
     :param eventId: id of the event
@@ -115,6 +147,17 @@ def deleteEvent(eventId: str)-> None:
     """
     service= authoriseStuff()
     service.events().delete(calendarId='primary', eventId=eventId).execute()
+    return
+
+def deleteEventsDate(date: str)-> None:
+    """This function helps to delete calendar events on a particular date
+    :param date: date to clear events
+    :return: None
+    """
+    service= authoriseStuff()
+    events= list_calendar_events_simple(date)
+    for e in events:
+        service.events().delete(calendarId='primary', eventId=e[2]).execute()
     return
 
 def createEvent(event):
@@ -142,5 +185,7 @@ def main():
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
 if __name__ == '__main__':
-    #main()
-    create_calendar_event(title="Take Diabetes Medications", location="Home", startDateTime="2023-11-19T13:00:00", endDateTime="2023-11-19T13:15:00", recurrenceRules=["RRULE:FREQ=DAILY;COUNT=30"], reminderList=["15 minutes"])
+    main()
+    #create_calendar_event(title="Take Diabetes Medications", location="Home", startDateTime="2023-11-19T13:00:00", endDateTime="2023-11-19T13:15:00", recurrenceRules=["RRULE:FREQ=DAILY;COUNT=30"], reminderList=["15 minutes"])
+    #print(list_calendar_events_simple("2023-11-23"))
+    #deleteEventsDate("2023-11-24")

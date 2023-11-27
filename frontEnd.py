@@ -1,3 +1,4 @@
+import pytz
 import streamlit as st
 from streamlit_chat import message
 from calendarAgent import load_calendar_chain
@@ -12,6 +13,7 @@ from elevenlabs import generate, stream
 from elevenlabs import set_api_key, stream, generate, Voices, VoiceSettings, User, Voice
 import os
 from dotenv import load_dotenv
+import datetime
 load_dotenv()
 set_api_key(os.getenv('ELEVENLABS_API_KEY'))
 
@@ -44,16 +46,18 @@ if ("chat_answers_history" not in st.session_state
 #     st.audio(wav_audio_data, format='audio/wav') #additional parameters of sample_rate and start time
 
 def on_change_checkbox(date,eventName):
-    fileName= "data/"+ eventName+ ".json"
-    try:
-        with open(fileName, 'r') as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        data = []
-    data.append(date)
-    with open(fileName, 'w') as file:
-        json.dump(data, file, indent=4)
-    st.session_state["checkbox"].append(eventName+date)
+    #fileName= "data/"+ eventName+ ".json"
+    if "medication" in eventName:
+        fileName= "data/medication.json"
+        try:
+            with open(fileName, 'r') as file:
+                data = json.load(file)
+        except FileNotFoundError:
+            data = []
+        data.append(date)
+        with open(fileName, 'w') as file:
+            json.dump(data, file, indent=4)
+        st.session_state["checkbox"].append(eventName+date)
     
 
 #side bar for model settings
@@ -62,7 +66,9 @@ with st.sidebar:
     events= list_calendar_events_today()
     for event in events:
         time= datetime.datetime.strptime(event[0], '%Y-%m-%dT%H:%M:%S%z').strftime('%I:%M %p')
-        date= datetime.datetime.strptime(event[0], '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%d-%p')
+        pacific = pytz.timezone('America/Los_Angeles')
+        date = datetime.datetime.now().strftime('%Y-%m-%d')
+        #date= datetime.datetime.strptime(event[0], '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%d')#-%p for AM or PM
         if event[1]+date not in st.session_state["checkbox"]:
             st.checkbox(time+ ": "+event[1], value=False, key=event[1], on_change=on_change_checkbox(date,event[1]))
     st.subheader("Configurations")

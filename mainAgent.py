@@ -32,7 +32,7 @@ class SearchInput(BaseModel):
 
 
 
-prompt_template_string= "You are a helpful assistant. You manage calender events, doordash orders, maps navigation and report on the news.  Clarify function arguments if needed. You also have access to the records of when he has taking his medication, by accessing files which are stored in the data folder. Do not assume the file's name, list the files to identify file of interest. Today's date is {currentDate}. Here are the user's particulars, use it if needed. You are currently chatting with {name}, his address is {address}, his/her email is {email}, and his/her phone number is {phone}.\n These are some contact information of his/her friends: {contacts}."
+prompt_template_string= "You are a helpful assistant to assist {name} in all required tasks.  Clarify function arguments if needed. Today's date is {currentDate}. Here are the user's particulars, use it if needed. His address is {address}, his/her email is {email}, and his/her phone number is {phone}.\n These are some contact information of his/her friends: {contacts}."
 
 
 def loadTools(user_info):
@@ -74,8 +74,9 @@ def loadTools(user_info):
     tools.append(deleteEventTool)
     tools.append(listEventTool)
     tools.append(currentDateTimeTool)
-    tools.append(StructuredTool.from_function(list_files, name="list medical records", description="list files in the data folder"))
-    tools.append(StructuredTool.from_function(read_file, name= "read medical records", description="read a record of the days medication wasin the data folder"))
+    # tools.append(StructuredTool.from_function(list_files, name="list medication routine records", description="list filenames of the medicatal routine records in the data folder"))
+    # tools.append(StructuredTool.from_function(read_file, name= "read medication routine record", description="read contents of a medication route routine file. Each file contains dates in which the user has taken his medication"))
+    tools.append(StructuredTool.from_function(medication_routine, name= "medication routine", description="list dates in which the user has taken his medication"))
     tools.append(StructuredTool.from_function(send_email, name= "send email", description="sends an email to an intended recipient"))
     return tools
 
@@ -87,9 +88,9 @@ def load_main_agent(model, memory, user_info, contact_info):
     for name,email in contact_info.items():
         contactString+= name+ " : "+ email+ ", "
     prompt_string=prompt_template_string.format(currentDate=date.today().strftime("%B %d, %Y"), name= user_info["name"], address= user_info["location"], email= user_info["email"],phone= user_info["phone"], contacts= contactString)
-    memory= ConversationBufferMemory(memory_key="chat_history",return_messages=True)
+    # memory= ConversationBufferMemory(memory_key="chat_history",return_messages=True)
     chat_history=MessagesPlaceholder(variable_name="chat_history")
-    agent=initialize_agent(tools=tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prompt_string,"input_variables": ["chat_history"],"memory_prompts": [chat_history],}, memory= memory)
+    agent=initialize_agent(tools=tools,llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, agent_kwargs={'prefix': prompt_string,"input_variables": ["chat_history"],"memory_prompts": [chat_history],}, memory= memory, max_iterations= 10, max_execution_time=60)
     return agent
 
 

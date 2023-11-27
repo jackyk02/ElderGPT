@@ -22,3 +22,11 @@ def read_file(fileName:str)-> List[str]:
     with open('./data/'+fileName) as json_file:
         data = json.load(json_file)
         return list(set(data))
+def medication_routine()->List[str]:
+    """
+    This function retunrs a list detiling days in which the user has consumed medication
+    :return: list of dates the user consumed medication
+    """
+    with open('./data/medication.json') as json_file:
+        data = json.load(json_file)
+        return list(set(data))
