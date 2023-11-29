@@ -29,18 +29,25 @@ def currentDateTime()->str:
     """This function helps to get the current date time
     :return: current date time
     """
-    now = datetime.datetime.utcnow().isoformat() + 'Z'
+    now = datetime.utcnow().isoformat() + 'Z'
     return now
 
-def create_calendar_event(title:str, location:str, startDateTime:str, endDateTime:str, reminderList: Optional[List[str]] = None, recurrenceRules: Optional[List[str]] = None) -> str:
+def create_calendar_event(title:str, location:str, startDateTime:str, endDateTime:str) -> None:
+    # """This function helps to create a calendar event given its details
+    # :param title: title of the event
+    # :param location: location of the event
+    # :param startDateTime: start date time of the event
+    # :param endDateTime: end date time of the event
+    # :param reminderList: list of reminders
+    # :param recurrenceRules: list of recurrence rules, must include end date in basic ISO 8601 date format
+    # :return: html link to the event
+    # """
     """This function helps to create a calendar event given its details
     :param title: title of the event
     :param location: location of the event
     :param startDateTime: start date time of the event
     :param endDateTime: end date time of the event
-    :param reminderList: list of reminders
-    :param recurrenceRules: list of recurrence rules, must include end date in basic ISO 8601 date format
-    :return: html link to the event
+    :return: None
     """
     event = {
         'summary': title,
@@ -53,16 +60,10 @@ def create_calendar_event(title:str, location:str, startDateTime:str, endDateTim
             'dateTime': endDateTime,
             'timeZone': 'America/Los_Angeles',
         },
-        'reminders': {
-            'useDefault': False,
-            'overrides':reminderList,
-        },
-        'recurrence': [
-            recurrenceRules
-        ],
     }
     result= createEvent(event)
-    return f"Success: Event created: {result}"
+    print(f"Success: Event created: {result}")
+    return 
 
 def list_calendar_events_today()->List[str]:
     pacific = pytz.timezone('America/Los_Angeles')

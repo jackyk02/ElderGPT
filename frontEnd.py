@@ -2,7 +2,6 @@ import pytz
 import streamlit as st
 from streamlit_chat import message
 from calendarAgent import load_calendar_chain
-from mainAgent import load_main_agent
 from langchain.memory import ConversationBufferMemory, ConversationBufferWindowMemory
 import datetime
 import json 
@@ -11,20 +10,27 @@ from googleCalendar import list_calendar_events_today
 from streamlit_mic_recorder import speech_to_text
 from elevenlabs import generate, stream
 from elevenlabs import set_api_key, stream, generate, Voices, VoiceSettings, User, Voice
+from mainAgent import load_main_agent
+import datetime
 import os
 from dotenv import load_dotenv
-import datetime
 load_dotenv()
 set_api_key(os.getenv('ELEVENLABS_API_KEY'))
 
 conversationWindow=5 #hardcoded
 
-st.set_page_config(initial_sidebar_state="collapsed")
+#st.set_page_config(initial_sidebar_state="collapsed")
 
 ## STREAMLIT COMPONENTS
 st.title('ElderGPT')
 st.subheader(":robot_face: A conversational agent for the elderly")
-
+def reset_memory():
+    st.session_state["model_answer_history"] = []
+    st.session_state["user_prompt_history"] = []
+    st.session_state["chat_history"] = []
+    memory= ConversationBufferWindowMemory(k=conversationWindow,memory_key="chat_history", return_messages=True)
+    st.session_state["memory"]= memory
+    
 #init session states
 if ("chat_answers_history" not in st.session_state 
     and "user_prompt_history" not in st.session_state 
@@ -33,13 +39,10 @@ if ("chat_answers_history" not in st.session_state
     and "checkbox" not in st.session_state
     and "contacts" not in st.session_state
     ):
-    st.session_state["model_answer_history"] = []
-    st.session_state["user_prompt_history"] = []
-    st.session_state["chat_history"] = []
-    memory= ConversationBufferWindowMemory(k=conversationWindow,memory_key="chat_history", return_messages=True)
-    st.session_state["memory"]= memory
+    reset_memory()
     st.session_state["checkbox"]= []
     st.session_state["contacts"]= {}
+    
 
 # wav_audio_data = st_audiorec()
 # if wav_audio_data is not None:
@@ -47,7 +50,7 @@ if ("chat_answers_history" not in st.session_state
 
 def on_change_checkbox(date,eventName):
     #fileName= "data/"+ eventName+ ".json"
-    if "medication" in eventName:
+    if "medication" in eventName.lower():
         fileName= "data/medication.json"
         try:
             with open(fileName, 'r') as file:
@@ -70,7 +73,7 @@ with st.sidebar:
         date = datetime.datetime.now().strftime('%Y-%m-%d')
         #date= datetime.datetime.strptime(event[0], '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%d')#-%p for AM or PM
         if event[1]+date not in st.session_state["checkbox"]:
-            st.checkbox(time+ ": "+event[1], value=False, key=event[1], on_change=on_change_checkbox(date,event[1]))
+            st.button(label= time+ ": "+event[1], key=event[1], on_click=on_change_checkbox(date,event[1]))
     st.subheader("Configurations")
     with st.expander(":older_man: User Information", expanded=False):
         NAME= st.text_input("Name", value="John Doe")
@@ -103,6 +106,11 @@ with st.sidebar:
         data= json.dumps(st.session_state["chat_history"]),
         file_name='chat_history_{}.json'.format(datetime.datetime.now()),
         mime='application/json')
+    
+    st.button(
+        label="Clear chat history",
+        on_click=reset_memory
+    )
     
 #Camera
 # picture = st.camera_input("Take a picture") #future expansion?
@@ -152,7 +160,7 @@ def speech_to_text_callback():
         st.session_state.userPrompt = st.session_state.speech_output
         submit()
     else:
-        st.warning('Did not transcribe anything- try to speaka again', icon="⚠️")
+        st.warning('Did not transcribe anything- try to speak again', icon="⚠️")
 
 RFC5646_LANGUAGE_CODES={
     'English': 'en-US',

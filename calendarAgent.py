@@ -1,7 +1,6 @@
 from langchain.agents import initialize_agent, AgentType, Tool
 from langchain.chains import LLMMathChain
 from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI
 from langchain.utilities import SerpAPIWrapper
 from pydantic.v1 import BaseModel, Field
 from langchain.callbacks import HumanApprovalCallbackHandler
