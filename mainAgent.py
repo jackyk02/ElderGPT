@@ -16,17 +16,18 @@ from typing import Dict
 from datetime import date
 from langchain.prompts import PromptTemplate
 from langchain.tools import StructuredTool
-from infoRetriever import *
+from tools.infoRetriever import *
 from tools.DoorDash import DoordashTool
 from tools.News import newsAPI
 from tools.Translate import TranslatorTool
 from tools.TriviaGenerator import CognitiveGames
 from tools.Gmap import findDirections
+from tools.emailFunc import send_email
+
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from emailFunc import *
 
 OPENAI_API= os.getenv('OPENAI_API_KEY')
 SERPAPI_API_KEY= os.getenv('SERPAPI_API_KEY')
