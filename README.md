@@ -1,4 +1,4 @@
-# ElderGPT | CS294 Responsible GenAI and Decentralized Intelligence
+# ElderGPT
 
 ## Background
 Despite high mobile phone ownership among the elderly, many struggle to utilise various mobile applications due to their complex and varied nature. We hope to tackle this issue through ElderGPT, a one-stop elderly-friendly gateway to interact with various mobile applications
@@ -16,7 +16,7 @@ Despite high mobile phone ownership among the elderly, many struggle to utilise 
 ## Running Locally
 1. Clone the repository
 ```sh
-git clone https://github.com/Ranchu2000/ElderGPT.git
+git clone https://github.com/jackyk02/ElderGPT.git
 ```
 2. Set up .env file (refer to env_template.txt)
 
@@ -35,6 +35,5 @@ streamlit run ./frontEnd.py
 
 ## Developers
 - [Jacky Kwok](https://github.com/jackyk02)
-- [Jianan Cai](https://github.com/Jianan-Jackson)
 - [Shubhangam Prasad](https://github.com/ShubhangamPrasad)
 - [Wong Yu Fei](https://github.com/Ranchu2000)
